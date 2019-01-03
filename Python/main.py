@@ -67,7 +67,10 @@ def FindPlayer(mask_pl):
         return arr[0][0], arr[1][0]
     return -1, -1
 
-#맵 형태를 만든다(주변 잡음을 제거)
+def MaskWall(im):
+    # print()
+
+#맵 형태를 만든다(주변 잡음을 제거)(플레이어만 남긴다)
 def MaskMap(im):
     dst = cv2.add(im, mapMaskImage)
     mask_pl = cv2.inRange(dst, lower_pl, upper_pl)
