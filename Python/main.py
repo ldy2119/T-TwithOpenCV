@@ -34,12 +34,6 @@ attack = 3
 #현재 행동상태
 now_Player_Type = scout
 
-#근처에 벽이 있는지?
-point_nw = [(x + 5, y - 9), (x, y + 6), (x - 5, y), (x - 13, y + 3)]
-point_ne = [(x - 5, y - 9), (x, y + 6), (x + 5, y), (x + 13, y + 3)]
-point_sw = [(x + 5, y + 9), (x, y - 6), (x - 5, y), (x - 13, y - 3)]
-point_se = [(x - 5, y + 9), (x, y - 6), (x + 5, y), (x + 13, y - 3)]
-point = [point_nw, point_ne, point_sw, point_se]
 
 #식량을 가지고 온다
 def GetFood(im):
@@ -74,19 +68,103 @@ def FindPlayer(mask_pl):
         return arr[0][0], arr[1][0]
     return -1, -1
 
+#벽의 형태를 만든다(마스킹한다)
 def MaskWall(im):
     lower_pl = numpy.array([3, 0, 2])
     upper_pl = numpy.array([20, 13, 18])
     mask_pl = cv2.inRange(im, lower_pl, upper_pl)
+    # cv2.imshow("wal", mask_pl)
     return mask_pl
 
-#맵 형태를 만든다(주변 잡음을 제거)(플레이어만 남긴다)
+#플레이어 위치를 찾는다(마스킹한다)
 def MaskPl(im):
     dst = cv2.add(im, mapMaskImage)
     mask_pl = cv2.inRange(dst, lower_pl, upper_pl)
     # adf = cv2.bitwise_and(im, im, mask = mask_pl)
     # cv2.imshow("e", adf)
     return mask_pl
+
+#플레이어 주변 공간만 보이게 한다
+def MakeROI(im, y, x):
+    minX = x - 50 if x >= 50 else 0
+    maxX = x + 50 if x <= 220 else 270
+    minY = y - 50 if y >= 50 else 0
+    maxY = y + 50 if y <= 350 else 0
+    # print(minX, maxX, minY, maxY)
+    # print(x, y)
+    return im[minX:maxX, minY:maxY]
+
+#점 주변에 벽이 있는지?
+def Findaround(maskMap, x, y):
+    for i in [0, 1, 2, 3, 4, 5, 6, 7, 8]:
+        x_ = x
+        y_ = y
+        if(i%3 == 0):
+            x_ -= 1
+        elif(i%3 == 2):
+            x_ += 1
+        if(int(i/3) == 0):
+            y_ -= 1
+        elif(int(i/3) == 2):
+            y_ += 1
+        if maskMap[x_, y_] > 0:
+            # print(x, y)
+            return 1
+    return 0
+
+#벽을 찾는다
+# def FindWall(maskMap, y, x):
+#     #근처에 벽이 있는지?
+#     #동, 서, 남, 북 어느 방향에 벽이 있는지?
+    
+#     point_nw = [(x + 5, y - 9), (x, y + 6), (x - 9, y), (x - 13, y + 3)]
+#     point_ne = [(x - 5, y - 9), (x, y + 6), (x + 9, y), (x + 13, y + 3)]
+#     point_sw = [(x + 5, y + 9), (x, y - 6), (x - 9, y), (x - 13, y - 3)]
+#     point_se = [(x - 5, y + 9), (x, y - 6), (x + 9, y), (x + 13, y - 3)]
+#     point = [point_nw, point_ne, point_sw, point_se]
+#     cv2.imshow("m", maskMap)
+#     max = -1
+#     maxindex = -1
+#     for idx, arr in enumerate(point):
+#         tmp = 0
+#         for x, y in arr:
+#             tmp += Findaround(maskMap, x, y)
+#             # if maskMap[x, y] > 0:
+#                 # print(x, y)
+#             #     tmp += 1
+#         # print(tmp)
+#         if tmp >= 2:
+#             if tmp > max:
+#                     max = tmp
+#                     maxindex = idx
+#         # cv2.imshow("asdf", maskMap)
+#         # cv2.line(img1_fg, arr[0], arr[3], (255, 255, 255), 1)
+
+#     return maxindex
+
+#벽을 찾는다
+def FindWall(maskMap, x, y):
+    #근처에 벽이 있는지?
+    #동, 서, 남, 북 어느 방향에 벽이 있는지?
+    point_nw = [(x + 5, y - 9), (x, y + 6), (x - 9, y), (x - 13, y + 3)]
+    point_ne = [(x - 5, y - 9), (x, y + 6), (x + 9, y), (x + 13, y + 3)]
+    point_sw = [(x + 5, y + 9), (x, y - 6), (x - 9, y), (x - 13, y - 3)]
+    point_se = [(x - 5, y + 9), (x, y - 6), (x + 9, y), (x + 13, y - 3)]
+    point = [point_nw, point_ne, point_sw, point_se]
+    max = 0
+    maxindex = -1
+    for idx, arr in enumerate(point):
+        tmp = 0
+        for y, x in arr:
+            tmp = Findaround(maskMap, x, y)
+            if tmp > 0:
+                print(x, y)
+                tmp += 1
+        if tmp > max:
+            print(x, y)
+            max = tmp
+            maxindex = idx
+    return maxindex
 
 model = cv2.ml.KNearest_create()
 model.train(samples, cv2.ml.ROW_SAMPLE, responses)
@@ -96,9 +174,38 @@ while(True):
     im = numpy.array(im)
     im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
     im1 = im[970:1070, 370:580]
-    cv2.imshow("1", im1)
     im2 = im[800:1070, 0:400]
+    food = GetFood(im1)
+    mask_pl = MaskPl(im2)
+    x, y = FindPlayer(mask_pl)
+
+    if x != -1 and y != -1:
+        x, y = y, x
+        # mask_wall = MakeROI(im2, x, y)
+        mask_wall = im2
+        mask_wall = MaskWall(mask_wall)
+        index = FindWall(mask_wall, x, y)
+        
+        point_nw = [(x + 5, y - 9), (x, y + 6), (x - 9, y), (x - 13, y + 3)]
+        point_ne = [(x - 5, y - 9), (x, y + 6), (x + 9, y), (x + 13, y + 3)]
+        point_sw = [(x + 5, y + 9), (x, y - 6), (x - 9, y), (x - 13, y - 3)]
+        point_se = [(x - 5, y + 9), (x, y - 6), (x + 9, y), (x + 13, y - 3)]
+        point = [point_nw, point_ne, point_sw, point_se]
+        for arr in point:
+            for x, y in arr:
+                cv2.circle(im2, (x, y), 1, (255, 255, 0), -1)
+                # print(x, y)
+        print(index)
     cv2.imshow("2", im2)
+    # cv2.imwrite("map11111.png", im2)
+
+    if cv2.waitKey(25) & 0xFF == ord('q'):
+        cv2.destroyAllWindows()
+        break
+
+    #코드(였던 것)
+    # cv2.imshow("1", im1)
+
     # image = ImageGrab.grab(bbox=(370, 970, 580, 1070))
     # printScreen = numpy.array(image)
     # image2 = ImageGrab.grab(bbox=(0, 800, 400, 1070))
@@ -107,15 +214,8 @@ while(True):
     # printScreen = cv2.cvtColor(printScreen, cv2.COLOR_BGR2RGB)
     # printScreen = cv2.cvtColor(printScreen, cv2.COLOR_RGB2GRAY)
     # ret, printScreen = cv2.threshold(printScreen, 90, 255, cv2.THRESH_BINARY_INV)
-    cv2.imshow('window', im2)
     # cv2.imshow('win2', print2)
     # img_new = Image.fromarray(printScreen)
     # text = pytesseract.image_to_string(img_new)
-    food = GetFood(im1)
-    mask_pl = MaskPl(im2)
-    x, y = FindPlayer(mask_pl)
     # print(text)
-    print(x, y)
-    if cv2.waitKey(25) & 0xFF == ord('q'):
-        cv2.destroyAllWindows()
-        break
+    # print(x, y)
