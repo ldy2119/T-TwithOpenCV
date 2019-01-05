@@ -34,6 +34,13 @@ attack = 3
 #현재 행동상태
 now_Player_Type = scout
 
+#근처에 벽이 있는지?
+point_nw = [(x + 5, y - 9), (x, y + 6), (x - 5, y), (x - 13, y + 3)]
+point_ne = [(x - 5, y - 9), (x, y + 6), (x + 5, y), (x + 13, y + 3)]
+point_sw = [(x + 5, y + 9), (x, y - 6), (x - 5, y), (x - 13, y - 3)]
+point_se = [(x - 5, y + 9), (x, y - 6), (x + 5, y), (x + 13, y - 3)]
+point = [point_nw, point_ne, point_sw, point_se]
+
 #식량을 가지고 온다
 def GetFood(im):
     gray = cv2.cvtColor(im,cv2.COLOR_BGR2GRAY)
@@ -68,15 +75,18 @@ def FindPlayer(mask_pl):
     return -1, -1
 
 def MaskWall(im):
-    # print()
+    lower_pl = numpy.array([3, 0, 2])
+    upper_pl = numpy.array([20, 13, 18])
+    mask_pl = cv2.inRange(im, lower_pl, upper_pl)
+    return mask_pl
 
 #맵 형태를 만든다(주변 잡음을 제거)(플레이어만 남긴다)
-def MaskMap(im):
+def MaskPl(im):
     dst = cv2.add(im, mapMaskImage)
     mask_pl = cv2.inRange(dst, lower_pl, upper_pl)
-    adf = cv2.bitwise_and(im, im, mask = mask_pl)
+    # adf = cv2.bitwise_and(im, im, mask = mask_pl)
     # cv2.imshow("e", adf)
-    return FindPlayer(mask_pl)
+    return mask_pl
 
 model = cv2.ml.KNearest_create()
 model.train(samples, cv2.ml.ROW_SAMPLE, responses)
@@ -102,7 +112,8 @@ while(True):
     # img_new = Image.fromarray(printScreen)
     # text = pytesseract.image_to_string(img_new)
     food = GetFood(im1)
-    x, y = MaskMap(im2)
+    mask_pl = MaskPl(im2)
+    x, y = FindPlayer(mask_pl)
     # print(text)
     print(x, y)
     if cv2.waitKey(25) & 0xFF == ord('q'):
