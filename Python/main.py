@@ -3,6 +3,8 @@ from PIL import Image
 import numpy
 import cv2
 from ctypes import windll
+from pynput.keyboard import Key, Controller
+import time
 
 user32 = windll.user32
 user32.SetProcessDPIAware()
@@ -34,6 +36,19 @@ attack = 3
 #현재 행동상태
 now_Player_Type = scout
 
+#현재 진행방향
+stop = 4
+nw = 0
+ne = 1
+sw = 2
+se = 3
+
+#키보드 입력을 받는다
+keyboard = Controller()
+
+#집 모양을 알아낸다
+template = cv2.imread("map3.png")
+h,w,d = template.shape #높이, 너비, 색상 갯수, d는 의미 없음
 
 #식량을 가지고 온다
 def GetFood(im):
@@ -112,6 +127,42 @@ def Findaround(maskMap, x, y):
             return 1
     return 0
 
+#모든 키를 누르지 않는다(손에서 뗀다)
+def ReleaseAll():
+    keyboard.release('r')
+    keyboard.release('a')
+    keyboard.release('s')
+    keyboard.release('d')
+    keyboard.release('w')
+    keyboard.release(Key.space)
+
+#북서쪽으로 이동
+def MoveNW():
+    keyboard.press('w')
+    keyboard.press('a')
+
+#북동쪽으로 이동
+def MoveNE():
+    keyboard.press('w')
+    keyboard.press('d')
+
+#남서쪽으로 이동
+def MoveSW():
+    keyboard.press('s')
+    keyboard.press('a')
+
+#남동쪽으로 이동
+def MoveSE():
+    keyboard.press('s')
+    keyboard.press('d')
+
+#집으로 이동
+def ReturnHome():
+    keyboard.press('r')
+    time.sleep(2)
+    keyboard.press(Key.space)
+    ReleaseAll()
+
 #벽을 찾는다
 # def FindWall(maskMap, y, x):
 #     #근처에 벽이 있는지?
@@ -160,11 +211,26 @@ def FindWall(maskMap, x, y):
             if tmp > 0:
                 print(x, y)
                 tmp += 1
-        if tmp > max:
-            print(x, y)
-            max = tmp
-            maxindex = idx
+        if tmp >= 2:
+            if tmp > max:
+                print(x, y)
+                max = tmp
+                maxindex = idx
     return maxindex
+
+#집의 위치를 알아낸다
+def FindHome(im):
+    method = eval('cv2.TM_CCOEFF')
+
+    res = cv2.matchTemplate(im,template,method)
+    min_val,max_val,min_loc, max_loc = cv2.minMaxLoc(res)
+    top_left = 0
+
+    if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
+        top_left = min_loc
+    else:
+        top_left = max_loc
+    return int(top_left[0] + w/2), int(top_left[1] + h/2)
 
 model = cv2.ml.KNearest_create()
 model.train(samples, cv2.ml.ROW_SAMPLE, responses)
@@ -186,15 +252,7 @@ while(True):
         mask_wall = MaskWall(mask_wall)
         index = FindWall(mask_wall, x, y)
         
-        point_nw = [(x + 5, y - 9), (x, y + 6), (x - 9, y), (x - 13, y + 3)]
-        point_ne = [(x - 5, y - 9), (x, y + 6), (x + 9, y), (x + 13, y + 3)]
-        point_sw = [(x + 5, y + 9), (x, y - 6), (x - 9, y), (x - 13, y - 3)]
-        point_se = [(x - 5, y + 9), (x, y - 6), (x + 9, y), (x + 13, y - 3)]
-        point = [point_nw, point_ne, point_sw, point_se]
-        for arr in point:
-            for x, y in arr:
-                cv2.circle(im2, (x, y), 1, (255, 255, 0), -1)
-                # print(x, y)
+        
         print(index)
     cv2.imshow("2", im2)
     # cv2.imwrite("map11111.png", im2)
