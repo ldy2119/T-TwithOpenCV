@@ -18,6 +18,9 @@ responses = responses.reshape((responses.size,1))
 lower_pl = numpy.array([15, 15, 175])
 upper_pl = numpy.array([35, 35, 190])
 
+lower_wall = numpy.array([3, 0, 2])
+upper_wall = numpy.array([20, 13, 18])
+
 #마스크 이미지
 mapMaskImage = cv2.imread("map25.png")
 
@@ -85,9 +88,7 @@ def FindPlayer(mask_pl):
 
 #벽의 형태를 만든다(마스킹한다)
 def MaskWall(im):
-    lower_pl = numpy.array([3, 0, 2])
-    upper_pl = numpy.array([20, 13, 18])
-    mask_pl = cv2.inRange(im, lower_pl, upper_pl)
+    mask_pl = cv2.inRange(im, lower_wall, upper_wall)
     # cv2.imshow("wal", mask_pl)
     return mask_pl
 
