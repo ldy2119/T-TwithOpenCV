@@ -32,14 +32,14 @@ def Findaround(maskMap, x, y):
             return 1
     return 0
 
-img2 = cv2.imread("map2.png")
-template = cv2.imread("map3.png")
+img2 = cv2.imread("map4.png")
+template = cv2.imread("map5.png")
 h,w,d = template.shape
 
 methods = ['cv2.TM_CCOEFF','cv2.TM_CCOEFF_NORMED','cv2.TM_CCORR','cv2.TM_CCORR_NORMED','cv2.TM_SQDIFF','cv2.TM_SQDIFF_NORMED']
 
 img = img2.copy()
-method = eval('cv2.TM_CCOEFF')
+method = eval('cv2.TM_CCOEFF_NORMED')
 
 res = cv2.matchTemplate(img,template,method)
 min_val,max_val,min_loc, max_loc = cv2.minMaxLoc(res)
