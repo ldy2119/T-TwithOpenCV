@@ -1,3 +1,6 @@
+#농장 찾기(수정 바람)
+
+
 from PIL import ImageGrab
 from PIL import Image
 import numpy

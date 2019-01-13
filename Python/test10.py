@@ -1,3 +1,6 @@
+#마우스 클릭 구현
+
+
 from PIL import ImageGrab
 from PIL import Image
 import numpy

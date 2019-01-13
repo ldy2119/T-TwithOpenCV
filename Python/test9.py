@@ -1,3 +1,5 @@
+#스크린샷 찍기
+
 from PIL import ImageGrab
 from PIL import Image
 import numpy

@@ -1,3 +1,5 @@
+#맵 사각형으로 만들기
+
 from PIL import ImageGrab
 from PIL import Image
 import numpy
