@@ -99,6 +99,7 @@ def FindWall(maskMap, x, y, img, preindex):
     point = [point_nw, point_ne, point_sw, point_se]
 
     point = [point[(preindex + 1) % 4], point[(preindex + 2) % 4], point[(preindex + 3) % 4], point[(preindex + 4) % 4]]
+    # print((preindex + 1) %4, (preindex + 2)%4,( preindex + 3)%4, (preindex + 4)%4)
     max = 0
     maxindex = -1
     for idx, arr in enumerate(point):
@@ -112,9 +113,11 @@ def FindWall(maskMap, x, y, img, preindex):
                 tmp += 1
                 cv2.circle(img, (y, x), 1, (255, 0, 255), -1)
         if tmp > max:
-                max = tmp
-                maxindex = idx
-        print(point[maxindex])
+            max = tmp
+            maxindex = (idx + preindex + 1) % 4
+
+    # print(point[maxindex])
+    print(maxindex)
     return maxindex
 
 # im = cv2.imread("map.png")
@@ -136,17 +139,17 @@ while(True):
         mask_ = MaskWall(im2)
         index_ = FindWall(mask_, x, y, im2, preindex)
         print(index_)
-        # if index_ == 0:
-        #     ReleaseAll()
-        #     MoveNE()
-        # if index_ == 1:
-        #     ReleaseAll()
-        #     MoveSE()
-        # if index_ == 2:
-        #     ReleaseAll()
-        #     MoveNW()
-        # if index_ == 3:
-        #     MoveSW()
+        if index_ == 0:
+            ReleaseAll()
+            MoveNE()
+        if index_ == 1:
+            ReleaseAll()
+            MoveSE()
+        if index_ == 2:
+            ReleaseAll()
+            MoveNW()
+        if index_ == 3:
+            MoveSW()
         preindex = index_
 
     cv2.imshow("2", im2)
