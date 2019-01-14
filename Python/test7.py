@@ -74,7 +74,7 @@ def FindWall(maskMap, x, y):
         cv2.line(img1_fg, arr[0], arr[3], (255, 255, 255), 1)
     return maxindex
 
-img = cv2.imread("map11111.png")
+img = cv2.imread("map.png")
 img2 = cv2.imread("map25.png")
 
 img2gray = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)

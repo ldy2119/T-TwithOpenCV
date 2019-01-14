@@ -10,9 +10,9 @@ def MaskMap(im, mask):
     dst = cv2.add(im, mask)
     return dst
 
-mask_ = [cv2.imread("map61.png"), cv2.imread("map62.png"), cv2.imread("map63.png"), cv2.imread("map64.png"),
-         cv2.imread("map65.png"), cv2.imread("map66.png"), cv2.imread("map67.png"), cv2.imread("map68.png"),
-         cv2.imread("map69.png")]
+mask_ = [cv2.imread("map6-1.png"), cv2.imread("map6-2.png"), cv2.imread("map6-3.png"), cv2.imread("map6-4.png"),
+         cv2.imread("map6-5.png"), cv2.imread("map6-6.png"), cv2.imread("map6-7.png"), cv2.imread("map6-8.png"),
+         cv2.imread("map6-9.png")]
 
 img = cv2.imread("map.png")
 
