@@ -29,7 +29,7 @@ def MaskWall(im):
     lower_pl = numpy.array([0, 0, 0])
     upper_pl = numpy.array([25, 13, 19])
     mask_pl = cv2.inRange(im, lower_pl, upper_pl)
-    arr = numpy.where(mask_pl)
+    # arr = numpy.where(mask_pl)
     return mask_pl
 
 def MakeROI(im, y, x):
@@ -69,7 +69,8 @@ def ccw(x1, y1, x2, y2, x3, y3):
         return 0
 
 #선분이 겹치는지 판정
-def isIntersect(x, y, x2, y2, x3, y3, x4, y4):
+def IsIntersect(x, y, x2, y2, x3, y3, x4, y4):
+    #x, y와 x2, y2가 선분.(현재 위치와 목적지) x3, y3와 x4, y4가 선분(겹치는지 확인할 벽)
     ab = ccw(x, y, x2, y2, x3, y3) * ccw(x, y, x2, y2, x4, y4)
     cd = ccw(x3, y3, x4, y4, x, y) * ccw(x3, y3, x4, y4, x2, y2)
     # print(ab, cd)
@@ -97,112 +98,199 @@ def ResizeRect(x, y, x2, y2, x3, y3, x4, y4):
     if x2 > x4:
         x2, y2, x4, y4 = x4, y4, x2, y2
     
-    print(x, y, x2, y2, x3, y3, x4, y4)
+    # print(x, y, x2, y2, x3, y3, x4, y4)
     a, b = FindSlope(x, y, x3, y3)
     a2, b2 = FindSlope(x2, y2, x4, y4)
-    print(a, b, a2, b2)
+    # print(a, b, a2, b2)
     x, y = ResizeLine(a, b, x, y, -3)
     x2, y2 = ResizeLine(a2, b2, x2, y2, -3)
     x3, y3 = ResizeLine(a, b, x3, y3, 3)
     x4, y4 = ResizeLine(a2, b2, x4, y4, 3)
     return int(round(x)), int(round(y)), int(round(x2)), int(round(y2)), int(round(x3)), int(round(y3)), int(round(x4)), int(round(y4))
 
-#경로 설정
-moveList = [(220, 100)]
 
-#경로 설정
-isMoving = False
+def IsCrossRect(x, y, x2, y2, x3, y3, x4, y4, dirx, diry, curx, cury):
+    arr = [(x, y), (x2, y2), (x3, y3), (x4, y4)]
+    for idx, obj in enumerate(arr):
+        if IsIntersect(curx, cury, dirx, diry, arr[idx][0], arr[idx][1], arr[(idx + 1) % 4][0], arr[(idx + 1) % 4][1]) == True:
+            return True
+    return False
 
-img = cv2.imread("map.png")
-img2 = cv2.imread("map25.png")
-img = cv2.add(img, img2)
-cv2.imshow("q", img)
-mask_ = MaskWall(img)
+def ccwRect(x, y, x2, y2, x3, y3, x4, y4, dirx, diry, curx, cury):
+    moveList = []
+    arr = [(x, y), (x2, y2), (x3, y3), (x4, y4)]
+    ccwtemp = []
+    for tmp in arr:
+        ccwtemp.append(ccw(curx, cury, tmp[0], tmp[1], dirx, diry))
 
-image, contours, hierachy = cv2.findContours(mask_, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-image = img
+    for idx, tmp in enumerate(ccwtemp):
+        if ccwtemp[idx] == -1:
+            moveList.insert(0, (arr[idx][0], arr[idx][1]))
+    return moveList
 
-cnt = contours[6]
-cv2.circle(img, (220, 170), 3, (255, 5, 55), -1)
-cv2.circle(img, (260, 160), 3, (255, 5, 55), -1)
 
-hull = cv2.convexHull(cnt)
-rect = cv2.minAreaRect(cnt)
-box = cv2.boxPoints(rect)
-box = numpy.int0(box)
-# cv2.drawContours(img,[box],0,(0,0,255),2)
-x, y, x2, y2, x3, y3, x4, y4 = ResizeRect(box[0][0], box[0][1], box[1][0], box[1][1], box[2][0], box[2][1], box[3][0], box[3][1])
-print(x, y, x2, y2, x3, y3, x4, y4)
 
-cv2.circle(img, (x, y), 1, (0, 255, 255), -1)
-cv2.circle(img, (x2, y2), 1, (0, 255, 255), -1)
-cv2.circle(img, (x3, y3), 1, (0, 255, 255), -1)
-cv2.circle(img, (x4, y4), 1, (0, 255, 255), -1)
+def ReleaseAll():
+    keyboard.release('r')
+    keyboard.release('a')
+    keyboard.release('s')
+    keyboard.release('d')
+    keyboard.release('w')
+    keyboard.release(Key.space)
 
-for idx, arr in enumerate(box):
-    # print(hull[idx % len(hull)][0])
-    x, y = box[idx]
-    x2, y2 = box[(idx + 1) % len(box)]
-    # cv2.line(img, (x, y), (x2, y2), (255, 0, 0), 1)
-    # cv2.circle(img, (x, y), 3, (255, 5, 55), -1)
-    cv2.imshow("e", img)
-    ccwtmp = ccw(220, 170, x, y, 260, 160)
-    # print(ccwtmp)
+#북쪽으로 이동
+def MoveN():
+    keyboard.press('w')
 
-# cv2.circle(img ,(x, y), 1, (255, 0, 0), -1)
-# cv2.line(img, (hull[0]), hull[int(len(hull)/2)], (255, 0, 0), 1)
-# cv2.line(img, (296, 164), (281, 174), (255, 0, 0), 1)
+#동쪽으로 이동
+def MoveE():
+    keyboard.press('d')
+
+#남쪽으로 이동
+def MoveS():
+    keyboard.press('s')
+
+#서쪽으로 이동
+def MoveW():
+    keyboard.press('a')
+
+def FindWay(im, x, y, x_, y_):
+    x__, y__ = 0, 0
+    if abs(x_ - x) < abs(y_ - y):
+        y__ = y_
+        x__ = x
+    else:
+        y__ = y
+        x__ = x_
+    # cv2.circle(im, (x__, y__), 1, (255, 0, 0), -1)
+    # print(x__, y__, abs(x_ - x), abs(y_ - y))
+    moveList.insert(0, (x__, y__))
+    print(x_, y_)
+    return True
+
+def Move(x, y, x_, y_):
+    value = -1
+
+    ReleaseAll()
+    if abs(x_ - x) > 5:
+        if x < x_:
+            MoveE()
+        elif x > x_:
+            MoveW()
+        value = 1
+    
+    if abs(y_ - y) > 5:
+        if y < y_:
+            MoveS()
+        elif y > y_:
+            MoveW()
+        value = 1
+    
+    return value
+
+# #경로 설정
+# moveList = [(160, 160)]
+
+# #경로 설정
+# isMoving = False
+
+# img = cv2.imread("map.png")
+# img2 = cv2.imread("map25.png")
+# img = cv2.add(img, img2)
+# cv2.imshow("q", img)
+# mask_ = MaskWall(img)
+
+# image, contours, hierachy = cv2.findContours(mask_, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+# image = img
+
+# cnt = contours[6]
+# cv2.circle(img, (220, 170), 3, (255, 5, 55), -1)
 # cv2.circle(img, (260, 160), 3, (255, 5, 55), -1)
-# cv2.circle(img, (230, 154), 3, (255, 5, 55), -1)
-# cv2.circle(img, (100, 100), 3, (255, 5, 55), -1)
-# cv2.waitKey(0)
+
+# hull = cv2.convexHull(cnt)
+# rect = cv2.minAreaRect(cnt)
+# box = cv2.boxPoints(rect)
+# box = numpy.int0(box)
+# # cv2.drawContours(img,[box],0,(0,0,255),2)
+# x, y, x2, y2, x3, y3, x4, y4 = ResizeRect(box[0][0], box[0][1], box[1][0], box[1][1], box[2][0], box[2][1], box[3][0], box[3][1])
+# # print(x, y, x2, y2, x3, y3, x4, y4)
+# print(IsCrossRect(x, y, x2, y2, x3, y3, x4, y4, 260, 160, 220, 170))
+
+# ccwRect(x, y, x2, y2, x3, y3, x4, y4, 260, 160, 220, 170)
+
+# cv2.circle(img, (x, y), 1, (0, 255, 255), -1)
+# cv2.circle(img, (x2, y2), 1, (0, 255, 255), -1)
+# cv2.circle(img, (x3, y3), 1, (0, 255, 255), -1)
+# cv2.circle(img, (x4, y4), 1, (0, 255, 255), -1)
+# print(moveList)
+
+# cv2.imshow("w", mask_)
 # cv2.imshow("e", image)
-
-# cv2.circle(img, (60, 60), 3, (255, 5, 55), -1)
 # cv2.waitKey(0)
-# cv2.imshow("e", image)
+# cv2.destroyAllWindows()
 
-# cv2.circle(img, (70, 40), 3, (255, 5, 55), -1)
-# cv2.waitKey(0)
-# cv2.imshow("e", image)
+img2 = cv2.imread("map25.png")
+MoveList = []
 
-# cv2.circle(img, (260, 160), 1, (255, 5, 55), -1)
-# cv2.circle(img, (244, 167), 1, (255, 5, 55), -1)
-# cv2.circle(img, (228, 156), 1, (255, 5, 55), -1)
-# cv2.line(img, (244, 167), (228, 156), (255, 0, 0), 1)
-# cv2.line(img, (220, 170), (260, 160), (255, 0, 0), 1)
+while True:
+    im = ImageGrab.grab()
+    im = numpy.array(im)
+    im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+    im2 = im[800:1070, 0:400]
+    im2 = cv2.add(im2, img2)
 
-# print(isIntersect(220, 170, 260, 160, 244, 167, 228, 156))
+    # y, x = MaskMap(im2)
+    # if(y != -1 and x != -1):
+    #     cv2.circle(im2, (x_, y_), 1, (255, 0, 0), -1)
+    #     if isMoving == False:
+    #         isMoving = FindWay(im2, x, y, moveList[0][0], moveList[0][1])
+    #     else:
 
-# print(hull)
-# defects = cv2.convexityDefects(cnt, hull)
+    cv2.imshow("2", im2)
+    y, x = MaskMap(im2)
 
-# for i in range(defects.shape[0]):
-#     sp, ep, fp, dist = defects[i, 0]
-#     start = tuple(cnt[sp][0])
-#     end = tuple(cnt[ep][0])
-#     farthest = tuple(cnt[fp][0])
-#     cv2.circle(img, farthest, 1, (255, 255, 255), -1)
+    # if len(MoveList) > 0:
+    #     value = Move(x, y, MoveList[0][0][0], MoveList[0][0][1])
+    #     if value == -1:
+    #         del MoveList[0][0]
 
-cv2.imshow("w", mask_)
-cv2.imshow("e", image)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    if cv2.waitKey(25) & 0xFF == ord('q'):
+        cv2.destroyAllWindows()
+        break
+    if cv2.waitKey(25) & 0xFF == ord('g'):
+        im3 = im2
+        # print(x, y)
+        cv2.circle(im3, (120, 110), 1, (0, 255, 0), -1)
+        if(y != -1 and x != -1):
+            mask_ = MaskWall(im2)
+            image, contours, hierachy = cv2.findContours(mask_, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+            crossContour = None
+            crossContourBox = []
+            for idx, cnt in enumerate(contours):
+                hull = cv2.convexHull(cnt)
+                rect = cv2.minAreaRect(cnt)
+                box = cv2.boxPoints(rect)
+                box = numpy.int0(box)
+                cv2.drawContours(im3, [box], 0, (0, 0, 255), 2)
+                if IsCrossRect(box[0][0], box[0][1], box[1][0], box[1][1], box[2][0], box[2][1], box[3][0], box[3][1], x, y, 120, 110) == True:
+                    crossContour = box
 
+            if crossContour is not None:
+                x1, y1, x2, y2, x3, y3, x4, y4 = ResizeRect(crossContour[0][0], crossContour[0][1], crossContour[1][0], crossContour[1][1],
+                                 crossContour[2][0], crossContour[2][1], crossContour[3][0], crossContour[3][1])
+                # cv2.circle(im3, (x1, y1), 1, (0, 255, 255), -1)
+                # cv2.circle(im3, (x2, y2), 1, (0, 255, 255), -1)
+                # cv2.circle(im3, (x3, y3), 1, (0, 255, 255), -1)
+                # cv2.circle(im3, (x4, y4), 1, (0, 255, 255), -1)
+                # print(x, y, x2, y2, x3, y3, x4, y4)
+                List = ccwRect(x, y, x2, y2, x3, y3, x4, y4, 120, 110, x, y)
+                print(List)
+                MoveList.insert(0, (120, 110))
+                MoveList.insert(0, List)
+                cv2.circle(im3, (List[0][0], List[0][1]), 1, (0, 255, 0), -1)
 
-# for idx, arr in enumerate(hull):
-#     # print(hull[idx % len(hull)][0])
-#     x, y = hull[idx][0]
-#     x2, y2 = hull[(idx + 1) % len(hull)][0]
-#     # cv2.line(img, (x, y), (x2, y2), (255, 0, 0), 1)
-#     # cv2.circle(img, (x, y), 3, (255, 5, 55), -1)
-#     cv2.imshow("e", img)
-#     ccwtmp = ccw(220, 170, x, y, 260, 160)
-#     if ccwtmp >= 1:
-#         cv2.circle(img, (x, y - 5), 1, (0, 5, 55), -1)
-#     # cv2.waitKey(0)
-#     # print(isIntersect(220, 170, 260, 160, x, y, x2, y2))
+                # cv2.drawContours(img,[box],0,(0,0,255),2)
+            cv2.imshow("3", im3)
 
-#     # cv2.waitKey(0)
-#     # cv2.imshow("e", image)
-#     # print(x, y, x2, y2)
+        # cv2.destroyAllWindows()
+        # break
