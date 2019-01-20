@@ -119,6 +119,8 @@ def IsCrossRect(x, y, x2, y2, x3, y3, x4, y4, dirx, diry, curx, cury):
 def ccwRect(x, y, x2, y2, x3, y3, x4, y4, dirx, diry, curx, cury):
     moveList = []
     arr = [(x, y), (x2, y2), (x3, y3), (x4, y4)]
+    arr.sort(key = lambda obj : obj[1], reverse = True)
+    # print(arr)
     ccwtemp = []
     for tmp in arr:
         ccwtemp.append(ccw(curx, cury, tmp[0], tmp[1], dirx, diry))
@@ -249,10 +251,11 @@ while True:
     cv2.imshow("2", im2)
     y, x = MaskMap(im2)
 
-    # if len(MoveList) > 0:
-    #     value = Move(x, y, MoveList[0][0][0], MoveList[0][0][1])
-    #     if value == -1:
-    #         del MoveList[0][0]
+    if len(MoveList) > 0:
+        print(MoveList)
+        value = Move(x, y, MoveList[0][0], MoveList[0][1])
+        if value == -1:
+            del MoveList[0]
 
     if cv2.waitKey(25) & 0xFF == ord('q'):
         cv2.destroyAllWindows()
@@ -267,27 +270,38 @@ while True:
             crossContour = None
             crossContourBox = []
             for idx, cnt in enumerate(contours):
-                hull = cv2.convexHull(cnt)
-                rect = cv2.minAreaRect(cnt)
-                box = cv2.boxPoints(rect)
-                box = numpy.int0(box)
-                cv2.drawContours(im3, [box], 0, (0, 0, 255), 2)
-                if IsCrossRect(box[0][0], box[0][1], box[1][0], box[1][1], box[2][0], box[2][1], box[3][0], box[3][1], x, y, 120, 110) == True:
-                    crossContour = box
+                # hull = cv2.convexHull(cnt)
+                # rect = cv2.minAreaRect(cnt)
+                # box = cv2.boxPoints(rect)
+                # box = numpy.int0(box)
+                # cv2.drawContours(im3, [box], 0, (0, 0, 255), 2)
+                
+                a, b, w, h = cv2.boundingRect(cnt)
+                if IsCrossRect(a, b, a + w, b, a, b + h, a + w, b + h, x, y, 120, 110) == True:
+                    crossContour = [(a, b), (a + w, b), (a + w, b + h), (a, b + h)]
+                # if IsCrossRect(box[0][0], box[0][1], box[1][0], box[1][1], box[2][0], box[2][1], box[3][0], box[3][1], x, y, 120, 110) == True:
+                #     crossContour = box
 
             if crossContour is not None:
+                # print(crossContour)
                 x1, y1, x2, y2, x3, y3, x4, y4 = ResizeRect(crossContour[0][0], crossContour[0][1], crossContour[1][0], crossContour[1][1],
                                  crossContour[2][0], crossContour[2][1], crossContour[3][0], crossContour[3][1])
-                # cv2.circle(im3, (x1, y1), 1, (0, 255, 255), -1)
+                # print(x1, y1, x2, y2, x3, y3, x4, y4)
+                cv2.circle(im3, (x1, y1), 1, (0, 255, 255), -1)
                 # cv2.circle(im3, (x2, y2), 1, (0, 255, 255), -1)
                 # cv2.circle(im3, (x3, y3), 1, (0, 255, 255), -1)
                 # cv2.circle(im3, (x4, y4), 1, (0, 255, 255), -1)
                 # print(x, y, x2, y2, x3, y3, x4, y4)
-                List = ccwRect(x, y, x2, y2, x3, y3, x4, y4, 120, 110, x, y)
-                print(List)
+                List = ccwRect(x1, y1, x2, y2, x3, y3, x4, y4, 120, 110, x, y)
+                # print(type(List))
+                # print(List)
+                List.reverse()
+                # print(List)
+
                 MoveList.insert(0, (120, 110))
-                MoveList.insert(0, List)
-                cv2.circle(im3, (List[0][0], List[0][1]), 1, (0, 255, 0), -1)
+                for tmp in List:
+                    MoveList.insert(0, tmp)
+                # cv2.circle(im3, (List[0][0], List[0][1]), 1, (0, 255, 0), -1)
 
                 # cv2.drawContours(img,[box],0,(0,0,255),2)
             cv2.imshow("3", im3)
