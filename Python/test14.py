@@ -185,7 +185,7 @@ def Move(x, y, x_, y_):
         if y < y_:
             MoveS()
         elif y > y_:
-            MoveW()
+            MoveN()
         value = 1
     
     return value
