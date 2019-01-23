@@ -13,3 +13,7 @@ mouse.press(Button.left)
 mouse.release(Button.left)
 mouse.press(Button.left)
 mouse.release(Button.left)
+
+#28 117 198
+#30 126 214
+#RGB로, 상대편을 나타냄

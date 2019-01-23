@@ -22,6 +22,7 @@ model = cv2.ml.KNearest_create()
 model.train(samples, cv2.ml.ROW_SAMPLE, responses)
 
 arr = [(-14, 0), (14, 0), (0, -10), (0, 10), (-7, -5), (7, -5), (-7, 5), (7, 5)]
+arr2 = [(0, -20), (-7, -15), (-14, -10)]
 
 
 def GetFood(im):
@@ -64,16 +65,19 @@ def MaskMap(im):
 
     return FindPlayer(mask_pl)
 
+#######
+#농장을 짓는다
+
 def FindFarm(maskMap, x, y):
-    arr2 = []
+    array = []
     # cv2.imshow("q", maskMap)
     for x_, y_ in arr:
         tmp = Findaround(maskMap, x + x_, y + y_)
         if tmp == 1:
-            arr2.append(1)
+            array.append(1)
         else:
-            arr2.append(0)
-    return arr2
+            array.append(0)
+    return array
 
 def BuildFarm(img, x, y):
     lower_pl = numpy.array([15, 15, 175])
@@ -81,13 +85,41 @@ def BuildFarm(img, x, y):
 
     mask_ = cv2.inRange(img, lower_pl, upper_pl)
 
-    arr2 = FindFarm(mask_, x, y)
-    for idx, tmp in enumerate(arr2):
-        if arr2[idx] == 0:
+    array = FindFarm(mask_, x, y)
+    for idx, tmp in enumerate(array):
+        if array[idx] == 0:
             cv2.circle(img, (arr[idx][0] + x, arr[idx][1] + y), 1, (255, 0, 0), -1)
-            # moveList.insert(0, (arr[idx][0] + x, arr[idx][1] + y))
             return arr[idx][0] + x, arr[idx][1] + y
     return -1, -1
+
+#######
+#병영을 짓는다
+
+def FindBarrack(maskMap, x, y):
+    array = []
+    # cv2.imshow("q", maskMap)
+    for x_, y_ in arr2:
+        tmp = Findaround(maskMap, x + x_, y + y_)
+        if tmp == 1:
+            array.append(1)
+        else:
+            array.append(0)
+    return array
+
+def BuildBarrak(img, x, y):
+    lower_pl = numpy.array([15, 15, 175])
+    upper_pl = numpy.array([50, 50, 210])
+
+    mask_ = cv2.inRange(img, lower_pl, upper_pl)
+
+    array = FindBarrack(mask_, x, y)
+    for idx, tmp in enumerate(array):
+        if array[idx] == 0:
+            cv2.circle(img, (arr2[idx][0] + x, arr2[idx][1] + y), 1, (255, 0, 0), -1)
+            return arr2[idx][0] + x, arr2[idx][1] + y
+    return -1, -1
+
+#######
 
 def Findaround(maskMap, y, x):
     for i in [0, 1, 2, 3, 4, 5, 6, 7, 8]:
@@ -173,14 +205,14 @@ def Move(x, y, x_, y_):
     value = -1
 
     ReleaseAll()
-    if abs(x_ - x) > 5:
+    if abs(x_ - x) > 3:
         if x < x_:
             MoveE()
         elif x > x_:
             MoveW()
         value = 1
     
-    if abs(y_ - y) > 5:
+    if abs(y_ - y) > 3:
         if y < y_:
             MoveS()
         elif y > y_:
@@ -230,19 +262,21 @@ def ResizeLine(a, b, x, y, resize):
 
 #Contour를 감싸는 사각형을 더 크게 만든다. x, y와 x3, y3이 반대쪽 점이며, x2, y2와 x4, y4가 반대쪽 점이다.
 def ResizeRect(x, y, x2, y2, x3, y3, x4, y4):
+    if x == x2 or x == x3 or x == x4:
+        return -1, -1, -1, -1, -1, -1, -1, -1
+
     if x > x3:
         x, y, x3, y3 = x3, y3, x, y
     if x2 > x4:
         x2, y2, x4, y4 = x4, y4, x2, y2
     
-    # print(x, y, x2, y2, x3, y3, x4, y4)
     a, b = FindSlope(x, y, x3, y3)
     a2, b2 = FindSlope(x2, y2, x4, y4)
-    # print(a, b, a2, b2)
     x, y = ResizeLine(a, b, x, y, -3)
     x2, y2 = ResizeLine(a2, b2, x2, y2, -3)
     x3, y3 = ResizeLine(a, b, x3, y3, 3)
     x4, y4 = ResizeLine(a2, b2, x4, y4, 3)
+
     return int(round(x)), int(round(y)), int(round(x2)), int(round(y2)), int(round(x3)), int(round(y3)), int(round(x4)), int(round(y4))
 
 
@@ -327,24 +361,24 @@ while(True):
     if MillX == -1 or MillY == -1:
         MillX, MillY = FindWindmill(im2)
     
-    if BuildFlag == True:
+    if BuildFlag == True and len(MoveList) == 0:
         Build()
         BuildFlag = False
+        print("e")
 
-    if len(MoveList) > 0:
+    elif BuildFlag == True and len(MoveList) > 0:
         y, x = MaskMap(im2)
-        print(MoveList[0][0], MoveList[0][1], x, y)
-
         value = Move(x, y, MoveList[0][0], MoveList[0][1])
+
         if value == -1:
             del MoveList[0]
 
-    elif food >= 60:
+    elif food >= 60 and BuildFlag == False:
         y, x = MaskMap(im2)
-        x2, y2 = BuildFarm(im2, MillX, MillY)
-        if x2 == -1 or y2 == -1:
+        x_, y_ = BuildFarm(im2, MillX, MillY)
+        if x_ == -1 or y_ == -1:
             continue
-        MoveList.insert(0, (x2, y2))
+        MoveList.insert(0, (x_, y_))
         # mask_ = MaskWall(im2)
         # image, contours, hierachy = cv2.findContours(mask_, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
         # crossContour = None
@@ -352,18 +386,18 @@ while(True):
         # for idx, cnt in enumerate(contours):
             
         #     a, b, w, h = cv2.boundingRect(cnt)
-        #     if IsCrossRect(a, b, a + w, b, a, b + h, a + w, b + h, x2, y2, x, y) == True:
+        #     if IsCrossRect(a, b, a + w, b, a, b + h, a + w, b + h, x_, y_, x, y) == True:
         #         crossContour = [(a, b), (a + w, b), (a + w, b + h), (a, b + h)]
 
         # if crossContour is not None:
         #     x1, y1, x2, y2, x3, y3, x4, y4 = ResizeRect(crossContour[0][0], crossContour[0][1], crossContour[1][0], crossContour[1][1],
         #                         crossContour[2][0], crossContour[2][1], crossContour[3][0], crossContour[3][1])
         #     # cv2.circle(im3, (x1, y1), 1, (0, 255, 255), -1)
-        #     List = ccwRect(x1, y1, x2, y2, x3, y3, x4, y4, 120, 110, x, y)
+        #     List = ccwRect(x1, y1, x2, y2, x3, y3, x4, y4, x_, y_, x, y)
         #     List.reverse()
-        #     print(x1, y1, x2, y2, x3, y3, x4, y4)
+        #     print(x1, y1, x2, y2, x3, y3, x4, y4, x, y, x_, y_)
 
-        #     MoveList.insert(0, (120, 110))
+        #     # MoveList.insert(0, (120, 110))
         #     for tmp in List:
         #         print(tmp)
         #         MoveList.insert(0, tmp)
