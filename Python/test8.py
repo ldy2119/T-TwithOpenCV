@@ -364,11 +364,11 @@ while(True):
     if BuildFlag == True and len(MoveList) == 0:
         Build()
         BuildFlag = False
-        print("e")
 
     elif BuildFlag == True and len(MoveList) > 0:
         y, x = MaskMap(im2)
         value = Move(x, y, MoveList[0][0], MoveList[0][1])
+        print(x, y, MoveList)
 
         if value == -1:
             del MoveList[0]
