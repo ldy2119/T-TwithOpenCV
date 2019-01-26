@@ -121,6 +121,11 @@ def BuildBarrak(img, x, y):
 
 #######
 
+def Build():
+    keyboard.press(Key.space)
+    time.sleep(0.5)
+    keyboard.release(Key.space)
+    
 def Findaround(maskMap, y, x):
     for i in [0, 1, 2, 3, 4, 5, 6, 7, 8]:
         x_ = x
@@ -157,11 +162,6 @@ def FindWindmill(img):
     x = top_left[0] + 7
     y = top_left[1] + 3
     return x, y
-
-def Build():
-    keyboard.press(Key.space)
-    time.sleep(0.5)
-    keyboard.release(Key.space)
 
 def ReleaseAll():
     keyboard.release('r')

@@ -51,22 +51,32 @@ def Build():
     time.sleep(0.5)
     keyboard.release(Key.space)
 
-while(True):
-    im = ImageGrab.grab()
-    im = numpy.array(im)
-    im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-    im1 = im[970:1070, 370:580]
-    im2 = im[800:1070, 0:400]
-    food = GetFood(im1)
+# while(True):
+#     im = ImageGrab.grab()
+#     im = numpy.array(im)
+#     im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+#     im1 = im[970:1070, 370:580]
+#     im2 = im[800:1070, 0:400]
+#     food = GetFood(im1)
     
-    # if cv2.waitKey(25) & 0xFF == ord('g'):
-    # print(food)
-    if food >= 60:
-        Build()
+#     # if cv2.waitKey(25) & 0xFF == ord('g'):
+#     # print(food)
+#     if food >= 60:
+#         Build()
 
-    if cv2.waitKey(25) & 0xFF == ord('q'):
-        cv2.destroyAllWindows()
-        break
+#     if cv2.waitKey(25) & 0xFF == ord('q'):
+#         cv2.destroyAllWindows()
+#         break
 
+lower_pl = numpy.array([110, 110, 185])
+upper_pl = numpy.array([123, 123, 200])
+
+img = cv2.imread("map.png")
+mask = cv2.inRange(img, lower_pl, upper_pl)
+cv2.imshow("mas", mask)
+cv2.circle(img, (217, 64), 1, (255, 255, 255), -1)
+cv2.imshow("e", img)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
 
 #193 118 118
